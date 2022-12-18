@@ -16,7 +16,7 @@ def get_playlist_tracks(playlist_id):
     songs = []
 
     # print all the artist - titles
-    for item in results['items']: 
+    for item in results['items']:  # type: ignore
         track = item['track']
         track = Song(track['name'], track['artists'][0]['name'], track['id'], track['duration_ms'])
         track.cache_track()

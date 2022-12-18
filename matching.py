@@ -14,7 +14,7 @@ def ms_to_min(ms):
             seconds = f"0{seconds}"
         return f"{minutes}:{seconds}"
 
-def build(tracks, selection, fetch_track):
+def build(tracks, selection, fetch_track, confirmed=None):
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
@@ -59,10 +59,22 @@ def build(tracks, selection, fetch_track):
         try:
             i = 1
             for data in tracks[fetch_track].matching_tracks[int(panel_page_index*4):int((panel_page_index+1)*4)]:
+                _panel_title = "[bold blue]Track Name:[/bold blue] [bold white]{}[/bold white]"
+                
+                panel_style = ""
+                if build_item == selection and build_item != confirmed:
+                    panel_title = _panel_title + " [bold green] [SELECTED][/bold green]"
+                    panel_style = "bold green"
+                elif  build_item == confirmed:
+                    panel_title = _panel_title + " [bold gold3] [CONFIRMED][/bold gold3]"
+                    panel_style = "bold gold3"
+                else:
+                    panel_title = _panel_title
 
                 panel = Panel(f"""[bold blue]Track Name:[/bold blue] [bold white]{data.title}[/bold white] 
 [bold blue]Artist[/bold blue]: [bold white]{data.artist().title}[/bold white]
-[bold blue]Duration[/bold blue]: [bold white]{ms_to_min(data.duration)}[/bold white]""",title="[yellow bold]Track {}[/yellow bold]".format(build_item+1)+f"{'[bold green] [SELECTED][/bold green]' if build_item == selection else ''}",style="bold green" if build_item == selection else "") # type: ignore 
+[bold blue]Duration[/bold blue]: [bold white]{ms_to_min(data.duration)}[/bold white]""",title=panel_title.format(build_item+1),style=panel_style) # type: ignore 
+                
                 page_layout[layout_match[str(i)]].update(panel)
                 build_item += 1
                 i += 1

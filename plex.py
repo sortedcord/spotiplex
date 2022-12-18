@@ -32,8 +32,8 @@ def check_if_exist(song):
     track = song.name
     artist = song.artist
 
-    music = plex.library.section('Music')
-
+    music = plex.library.section('Music') # type: ignore
+    
     # Search for Tracks
     init_track_results = music.searchTracks(title=track)
     flag = False

@@ -1,8 +1,6 @@
 .cache
-__pycache__/fetch.cpython-310.pyc
-__pycache__/plex.cpython-310.pyc
-__pycache__/matching.cpython-310.pyc
-__pycache__/func.cpython-310.pyc
+__pycache__/
+
 song_cache.pickle
 plex.pickle
 credentials.py

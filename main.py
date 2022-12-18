@@ -47,6 +47,8 @@ if input().lower() == "y":
     fetch_track = 0
 
     build(tracks, selection, fetch_track)
+
+    confirmed = None
     while True:
         key = getkey()
         if key == keys.LEFT:
@@ -71,10 +73,15 @@ if input().lower() == "y":
             fetch_track += 1
             selection = 0
             selected_page = 0
+            confirmed = None
         elif key == '-':
             selection = 0
             selected_page = 0
             fetch_track -= 1
+            confirmed = None
+        # When enter key is presed
+        elif key == 'c':
+            confirmed = selection
         
         if fetch_track < 0:
             fetch_track = 0
@@ -85,7 +92,7 @@ if input().lower() == "y":
             selection = 0
         if selection >= len(tracks):
             selection = len(tracks) - 1
-        build(tracks, selection, fetch_track)
+        build(tracks, selection, fetch_track, confirmed)
 
 
 else:
