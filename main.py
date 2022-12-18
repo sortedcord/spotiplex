@@ -24,15 +24,20 @@ for track in tracks:
     stat, track_res = check_if_exist(track)
 
     if stat:
-        con.print(f"Song {track_name} exists",style="bold green",end=" ")
-        con.print(f"by {artist}",style="bold blue", end=" ")
+        con.print(f"Song {track_name} exists",style="bold chartreuse3",end=" ")
+        con.print(f"by {artist}",style="bold chartreuse3", end=" ")
         con.print(f" {track_res} Tracks.",style="yellow")
 
         recognized.append(track)
-    else:
-        con.print(f"Song {track_name} doesn't exist",style="bold red", end=" ")
-        con.print(f"by {artist}",style="bold red", end=" ")
+    elif stat == False and track_res != 0:
+        con.print(f"Multiple songs like {track_name} exist",style="bold green", end=" ")
         con.print(f" {track_res} Tracks.",style="yellow")
+        recognized.append(track)
+    
+    else:
+        con.print(f"Song {track_name} does not exist",style="bold red", end=" ")
+        con.print(f"by {artist}",style="bold red")
+
 
         not_recognized.append(track)
 
@@ -63,8 +68,6 @@ if input().lower() == "y":
             selection -= 4
         elif key == 'n':
             selection += 4
-        elif key == keys.ENTER:
-            pass
         elif key == keys.ESC:
             sys.exit()
         elif key == 'q':
@@ -80,7 +83,7 @@ if input().lower() == "y":
             fetch_track -= 1
             confirmed = None
         # When enter key is presed
-        elif key == 'c':
+        elif key == keys.ENTER:
             confirmed = selection
         
         if fetch_track < 0:

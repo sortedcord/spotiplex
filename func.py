@@ -17,7 +17,11 @@ class Song():
             
                 for song in song_cache:
                     if self == song:
-                        return
+                        pass
+                    elif self.name == song.name and self.artist == song.artist:
+                        song_cache.remove(song)
+                        song_cache.append(self)
+                        
                 
                 song_cache.append(self)
         

@@ -97,7 +97,7 @@ def build(tracks, selection, fetch_track, confirmed=None):
 
     main_layout.split_column(
         Layout(name="matching",ratio=3),
-        Layout(name="track_control",size=7,ratio=1)
+        Layout(name="track_control",size=3,ratio=1)
     )
 
     main_layout['matching'].split_row(
