@@ -1,0 +1,4 @@
+PlexAPI>=4.13.1
+spotipy>=2.22.0
+rich>=12.6.0
+getkey>=0.6.5
