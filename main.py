@@ -90,8 +90,8 @@ if input().lower() == "y":
 
         if selection < 0:
             selection = 0
-        if selection >= len(tracks):
-            selection = len(tracks) - 1
+        if selection >= len(tracks[fetch_track].matching_tracks):
+            selection = len(tracks[fetch_track].matching_tracks) - 1
         build(tracks, selection, fetch_track, confirmed)
 
 
