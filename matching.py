@@ -110,7 +110,7 @@ def build(tracks, selection, fetch_track, confirmed=None):
 [bold blue]Duration[/bold blue]: [bold white]{ms_to_min(fetch_track_duration)}[/bold white]
 [bold blue]Spotify ID[/bold blue]: [bold green_yellow]{fetch_track_spotify_id}[/bold green_yellow]
     """
-    fetched_layout_panel = Panel(fetched_layout_panel_content, title="[green bold]Fetched Track")
+    fetched_layout_panel = Panel(fetched_layout_panel_content, title=f"[green bold]Fetched Track {fetch_track}")
 
     main_layout['matching']['fetched'].update(fetched_layout_panel)
 
@@ -122,8 +122,14 @@ def build(tracks, selection, fetch_track, confirmed=None):
         Layout(name="next")
     )
 
-    previous_panel = Panel("[bold blue]Previous Track[/bold blue]")
-    next_panel = Panel("[bold blue]Next Track[/bold blue]")
+    if fetch_track != 0:
+        previous_panel = Panel(f"[bold blue]Previous Track {fetch_track-1}:[/bold blue] [bold white]{tracks[fetch_track-1].name}[/bold white]")
+    else:
+        previous_panel = Panel(f"[bold blue]First Track[/bold blue]")
+    if fetch_track != len(tracks)-1:
+        next_panel = Panel(f"[bold blue]Next Track {fetch_track+1}[/bold blue] [bold white]{tracks[fetch_track+1].name}[/bold white]")
+    else:
+        next_panel = Panel(f"[bold blue]Last Track[/bold blue]")
 
     main_layout['track_control']['previous'].update(previous_panel)
     main_layout['track_control']['next'].update(next_panel)
