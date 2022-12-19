@@ -7,6 +7,15 @@ from rich import print
 account = None
 plex = None
 
+
+def parse_song(song):
+    return {
+        'title':song.title,
+        'artist':song.artist().title,
+        'album': song.parentTitle,
+        'duration': song.duration
+    }
+
 def setup_plex(username, password, servername):
     global account
     try:
@@ -41,16 +50,16 @@ def check_if_exist(song):
     init_track_results = music.searchTracks(title=track)
     flag = False
     for i in init_track_results:
-        song.matching_tracks.append(i)
+        song.matching_tracks.append(parse_song(i))
 
 
         if artist.lower() in i.artist().title.lower() or i.artist().title.lower() in artist.lower():
             # change the index to 1 of matching_tracks
             song.matching_tracks.pop()
-            song.matching_tracks.insert(0,i)
+            song.matching_tracks.insert(0,parse_song(i))
 
             if i.title.lower() == track.lower():
-                song.confirmed_matching_track = i
+                song.confirmed_matching_track = parse_song(i)
             flag = True
 
     if song.confirmed_matching_track:
@@ -65,15 +74,15 @@ def check_if_exist(song):
     flag = False
     for i in split_track_results:
         if i not in init_track_results:
-            song.matching_tracks.append(i)
+            song.matching_tracks.append(parse_song(i))
 
         if artist.lower() in i.artist().title.lower() or i.artist().title.lower() in artist.lower():
             # change the index to 1 of matching_tracks
             song.matching_tracks.pop()
-            song.matching_tracks.insert(0,i)
+            song.matching_tracks.insert(0,parse_song(i))
 
             if i.title.lower() == track.lower():
-                song.confirmed_matching_track = i
+                song.confirmed_matching_track = parse_song(i)
             flag = True
 
     if song.confirmed_matching_track:
@@ -84,16 +93,16 @@ def check_if_exist(song):
         pattern_track_results = music.searchTracks(title=track.split("[")[0][:-1])
         for i in pattern_track_results:
             if i not in init_track_results and i not in split_track_results:
-                song.matching_tracks.append(i)
+                song.matching_tracks.append(parse_song(i))
 
             if artist.lower() in i.artist().title.lower() or i.artist().title.lower() in artist.lower():
 
                 if i.title.lower() == track.lower():
-                    song.confirmed_matching_track = i
+                    song.confirmed_matching_track = parse_song(i)
 
                 # change the index to 1 of matching_tracks
                 song.matching_tracks.pop()
-                song.matching_tracks.insert(0,i)
+                song.matching_tracks.insert(0,parse_song(i))
                 flag = True
 
     if song.confirmed_matching_track:

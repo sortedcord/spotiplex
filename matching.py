@@ -82,9 +82,10 @@ def build(tracks, selection, fetch_track, confirmed=None):
                 else:
                     panel_title = _panel_title
 
-                panel = Panel(f"""[bold blue]Track Name:[/bold blue] [bold white]{data.title}[/bold white] 
-[bold blue]Artist[/bold blue]: [bold white]{data.artist().title}[/bold white]
-[bold blue]Duration[/bold blue]: [bold white]{ms_to_min(data.duration)}[/bold white]""",title=panel_title.format(build_item+1),style=panel_style) # type: ignore 
+                panel = Panel(f"""[bold blue]Track Name:[/bold blue] [bold white]{data['title']}[/bold white] 
+[bold blue]Artist[/bold blue]: [bold white]{data['artist']}[/bold white]
+[bold blue]Duration[/bold blue]: [bold white]{ms_to_min(int(data['duration']))}[/bold white]
+[bold blue]Album[/bold blue]: [bold white]{data['album']}[/bold white]""",title=panel_title.format(build_item+1),style=panel_style) # type: ignore 
                 
                 page_layout[layout_match[str(i)]].update(panel)
                 build_item += 1
@@ -122,10 +123,10 @@ def build(tracks, selection, fetch_track, confirmed=None):
     #Split fetched layout
     main_layout['fetched'].split_column(
         Layout(name="fetched_top"),
-        Layout(name="fetched_bottom")
+        Layout(name="fetched_bottom", ratio=3)
     )
 
-    h = ((os.get_terminal_size().lines//3)+1)//2
+    h = ((os.get_terminal_size().lines//3)*2 +1)//2
     # exit()
 
     playlist_str= ""
