@@ -69,7 +69,7 @@ if input().lower() == "y":
         "p": "Previous Page",
         "n": "Next Page",
         "Enter": "Confirm Selection",
-        "q / ESC": "Quit",
+        "q / ESC": "Finish Matching",
         "Arrows": "Change Selection",
         "a": "Add local track",
         "r": "Reload UI",
@@ -106,9 +106,9 @@ if input().lower() == "y":
         elif key == 'n':
             selection += 4
         elif key == keys.ESC:
-            sys.exit()
+            break
         elif key == 'q':
-            sys.exit()
+            break
             
         elif key == '=':
             fetch_track += 1
@@ -166,3 +166,22 @@ if input().lower() == "y":
 
         tracks[fetch_track].update_status()
         build(tracks, selection, fetch_track, confirmed)
+
+    download_list = []
+
+    for track in tracks:
+        if track.display_color == 'red':
+            download_list.append(track)
+    
+    print("[bold green]Tracks to be Downloaded:- [/bold green]")
+    for i in download_list:
+        print(f"{i.artist} - {i.name}")
+    
+    print("\n[yellow]Continue Downloading these tracks? (Y/N)[yellow]",end=" ")
+
+    download_confirmation = input()
+
+    if download_confirmation.lower() == "y":
+        pass
+
+    

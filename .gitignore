@@ -1,6 +1,7 @@
 .cache
 __pycache__/
-
+.vscode/
+.venv/
 song_cache.pickle
 plex.pickle
 credentials.py

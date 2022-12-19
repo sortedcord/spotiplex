@@ -13,7 +13,8 @@ def parse_song(song):
         'title':song.title,
         'artist':song.artist().title,
         'album': song.parentTitle,
-        'duration': song.duration
+        'duration': song.duration,
+        'id': song.guid
     }
 
 def setup_plex(username, password, servername):

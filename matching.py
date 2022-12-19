@@ -85,7 +85,8 @@ def build(tracks, selection, fetch_track, confirmed=None):
                 panel = Panel(f"""[bold blue]Track Name:[/bold blue] [bold white]{data['title']}[/bold white] 
 [bold blue]Artist[/bold blue]: [bold white]{data['artist']}[/bold white]
 [bold blue]Duration[/bold blue]: [bold white]{ms_to_min(int(data['duration']))}[/bold white]
-[bold blue]Album[/bold blue]: [bold white]{data['album']}[/bold white]""",title=panel_title.format(build_item+1),style=panel_style) # type: ignore 
+[bold blue]Album[/bold blue]: [bold white]{data['album']}[/bold white]
+[bold blue]Plex ID[/bold blue]: [bold white]{data['id']}[/bold white]""",title=panel_title.format(build_item+1),style=panel_style) # type: ignore 
                 
                 page_layout[layout_match[str(i)]].update(panel)
                 build_item += 1
@@ -126,7 +127,7 @@ def build(tracks, selection, fetch_track, confirmed=None):
         Layout(name="fetched_bottom", ratio=3)
     )
 
-    h = ((os.get_terminal_size().lines//3)*2 +1)//2
+    h = ((os.get_terminal_size().lines//4)*3 +1)//2
     # exit()
 
     playlist_str= ""
