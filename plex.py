@@ -2,6 +2,7 @@ from plexapi.myplex import MyPlexAccount
 import sys
 import pickle
 from credentials import *
+from rich import print
 
 account = None
 plex = None
@@ -11,10 +12,10 @@ def setup_plex(username, password, servername):
     try:
         account = MyPlexAccount(f'{username}', f'{password}')
     except:
-        print("Error logging in")
+        print("[bold red]Error logging in[/bold red]")
         sys.exit(1)
     else:
-        print("Logged IN")
+        print("[bold green]Successfully logged in[/bold green]")
 
     global plex
     try:
@@ -47,7 +48,14 @@ def check_if_exist(song):
             # change the index to 1 of matching_tracks
             song.matching_tracks.pop()
             song.matching_tracks.insert(0,i)
+
+            if i.title.lower() == track.lower():
+                song.confirmed_matching_track = i
             flag = True
+
+    if song.confirmed_matching_track:
+        song.confirmed_matching_track_index = song.matching_tracks.index(song.confirmed_matching_track)
+
     
     if flag:
         return flag,len(song.matching_tracks)
@@ -63,7 +71,13 @@ def check_if_exist(song):
             # change the index to 1 of matching_tracks
             song.matching_tracks.pop()
             song.matching_tracks.insert(0,i)
+
+            if i.title.lower() == track.lower():
+                song.confirmed_matching_track = i
             flag = True
+
+    if song.confirmed_matching_track:
+        song.confirmed_matching_track_index = song.matching_tracks.index(song.confirmed_matching_track)
 
     # Pattern match without brackets
     if not flag:
@@ -73,10 +87,17 @@ def check_if_exist(song):
                 song.matching_tracks.append(i)
 
             if artist.lower() in i.artist().title.lower() or i.artist().title.lower() in artist.lower():
+
+                if i.title.lower() == track.lower():
+                    song.confirmed_matching_track = i
+
                 # change the index to 1 of matching_tracks
                 song.matching_tracks.pop()
                 song.matching_tracks.insert(0,i)
                 flag = True
+
+    if song.confirmed_matching_track:
+        song.confirmed_matching_track_index = song.matching_tracks.index(song.confirmed_matching_track)
 
     if flag:
         return flag,len(song.matching_tracks)

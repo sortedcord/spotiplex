@@ -17,6 +17,9 @@ def ms_to_min(ms):
 def build(tracks, selection, fetch_track, confirmed=None):
     os.system('cls' if os.name == 'nt' else 'clear')
 
+    if confirmed is None:
+        confirmed = tracks[fetch_track].confirmed_matching_track_index
+
 
     current_fetched_track = tracks[fetch_track]
     fetch_track_name = current_fetched_track.name
@@ -33,6 +36,15 @@ def build(tracks, selection, fetch_track, confirmed=None):
     build_item = 0
     for panel_page_index in range(total_pagination):
         page_layout = Layout()
+
+        if not tracks[fetch_track].matching_tracks:
+            page_layout.update(Panel(f"[bold red]No matching tracks found for {fetch_track_name}[/bold red]"))
+
+            panel_page = Panel(page_layout, title=f"[bold green]Page 0 [/bold green] of 0")
+            panel_pages.append(panel_page)
+
+            break
+
         page_layout.split_column(
             Layout(name="col1"),
             Layout(name="col2"),
@@ -55,7 +67,6 @@ def build(tracks, selection, fetch_track, confirmed=None):
             "4": 'item2x2'
         }
 
-
         try:
             i = 1
             for data in tracks[fetch_track].matching_tracks[int(panel_page_index*4):int((panel_page_index+1)*4)]:
@@ -63,11 +74,11 @@ def build(tracks, selection, fetch_track, confirmed=None):
                 
                 panel_style = ""
                 if build_item == selection and build_item != confirmed:
-                    panel_title = _panel_title + " [bold green] [SELECTED][/bold green]"
-                    panel_style = "bold green"
-                elif  build_item == confirmed:
-                    panel_title = _panel_title + " [bold gold3] [CONFIRMED][/bold gold3]"
+                    panel_title = _panel_title + " [bold gold3] [SELECTED][/bold gold3]"
                     panel_style = "bold gold3"
+                elif  build_item == confirmed:
+                    panel_title = _panel_title + " [bold chartreuse3] [CONFIRMED][/bold chartreuse3]"
+                    panel_style = "bold chartreuse3"
                 else:
                     panel_title = _panel_title
 
@@ -80,87 +91,81 @@ def build(tracks, selection, fetch_track, confirmed=None):
                 i += 1
         except IndexError:
             pass
+        
+        # If on the last page and there are less than 4 items
+        if panel_page_index == total_pagination - 1:
+            if len(tracks[fetch_track].matching_tracks) % 4 == 3:
+                page_layout['col2']['item2x2'].update(Panel(""))
+            elif len(tracks[fetch_track].matching_tracks) % 4 == 2:
+                page_layout['col2']['item2x2'].update(Panel(""))
+                page_layout['col2']['item1x2'].update(Panel(""))
+            elif len(tracks[fetch_track].matching_tracks) % 4 == 1:
+                page_layout['col2']['item2x2'].update(Panel(""))
+                page_layout['col2']['item1x2'].update(Panel(""))
+                page_layout['col1']['item2x1'].update(Panel(""))
 
-        panel_page = Panel(page_layout, title="[bold green]Page {}[/bold green]".format(panel_page_index+1))
+
+        panel_page = Panel(page_layout, title=f"[bold green]Page {panel_page_index+1}[/bold green] of {total_pagination}")
 
         panel_pages.append(panel_page)
 
 
-
-
-    # print(main_layout)
-
-
     main_layout = Layout()
-    # Set the height of the layout as 120
 
 
-    main_layout.split_column(
-        Layout(name="matching",ratio=3),
-        Layout(name="track_control",size=3,ratio=1)
-    )
 
-    main_layout['matching'].split_row(
+    main_layout.split_row(
         Layout(name="fetched",ratio=1),
         Layout(name="local",ratio=2)
     )
+
+    #Split fetched layout
+    main_layout['fetched'].split_column(
+        Layout(name="fetched_top"),
+        Layout(name="fetched_bottom")
+    )
+
+    h = ((os.get_terminal_size().lines//3)+1)//2
+    # exit()
+
+    playlist_str= ""
+
+    playlist_start = fetch_track-h if fetch_track- h > 0 else 0
+    playlist_end = fetch_track+h if fetch_track+h < len(tracks) else len(tracks)
+
+    offset = fetch_track - h
+    if offset < 0:
+        playlist_end += abs(offset)
+
+
+    for track in tracks[playlist_start:playlist_end]:
+        color = track.display_color
+        if track == tracks[fetch_track]:
+            playlist_str += f"[black on {color}]{tracks.index(track)+1}: {track.name} - {track.artist}[/black on {color}]\n"
+        else:
+            playlist_str += f"[{color}]{tracks.index(track)+1}: {track.name} - {track.artist}[/{color}]\n"
+
+    playlist_panel = Panel(playlist_str,title="Playlist")
+
+    main_layout['fetched']['fetched_bottom'].update(playlist_panel)
 
     fetched_layout_panel_content = f"""[bold blue]Track Name[/bold blue]: [bold white]{fetch_track_name}[/bold white]
 [bold blue]Artist Name[/bold blue]: [bold white]{fetch_track_artist}[/bold white]
 [bold blue]Duration[/bold blue]: [bold white]{ms_to_min(fetch_track_duration)}[/bold white]
 [bold blue]Spotify ID[/bold blue]: [bold green_yellow]{fetch_track_spotify_id}[/bold green_yellow]
     """
-    fetched_layout_panel = Panel(fetched_layout_panel_content, title=f"[green bold]Fetched Track {fetch_track}")
+    fetched_layout_panel = Panel(fetched_layout_panel_content, title=f"[green bold]Fetched Track {fetch_track+1} of {len(tracks)}[/green bold]")
 
-    main_layout['matching']['fetched'].update(fetched_layout_panel)
+    main_layout['fetched']['fetched_top'].update(fetched_layout_panel)
 
     current_page = selection // 4
-    main_layout['matching']['local'].update(panel_pages[current_page])
-
-    main_layout['track_control'].split_row(
-        Layout(name="previous"),
-        Layout(name="next")
-    )
-
-    if fetch_track != 0:
-        previous_panel = Panel(f"[bold blue]Previous Track {fetch_track-1}:[/bold blue] [bold white]{tracks[fetch_track-1].name}[/bold white]")
-    else:
-        previous_panel = Panel(f"[bold blue]First Track[/bold blue]")
-    if fetch_track != len(tracks)-1:
-        next_panel = Panel(f"[bold blue]Next Track {fetch_track+1}[/bold blue] [bold white]{tracks[fetch_track+1].name}[/bold white]")
-    else:
-        next_panel = Panel(f"[bold blue]Last Track[/bold blue]")
-
-    main_layout['track_control']['previous'].update(previous_panel)
-    main_layout['track_control']['next'].update(next_panel)
+    main_layout['local'].update(panel_pages[current_page])
 
 
     main_panel = Panel(main_layout, title="[bold red]Spotiplex Matching Utility",height=os.get_terminal_size().lines -6)
     print(main_panel)
 
-    keymaps = {
-        "r": "Next Track",
-        "e": "Previous Track",
-        "p": "Previous Page",
-        "n": "Next Page",
-        "Enter": "Confirm Selection",
-        "q / ESC": "Quit",
-        "Arrows": "Change Selection",
-        "a": "Add local track"
-    }
-
-    keymap_str = ""
-    _ = 1
-    for key, value in keymaps.items():
-        if len(keymap_str.replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
-            keymap_str += "\n"
-            _ += 1
-        elif len(str(keymap_str+f"[bold green]{key}[/bold green]: {value}" + "   ").replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
-            keymap_str += "\n"
-            _ += 1
-        keymap_str += f"[bold green]{key}[/bold green]: {value}" + "   "
-
-    print(keymap_str+"\n")
+    
 
 
 

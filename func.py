@@ -9,6 +9,18 @@ class Song():
         self.duration = duration
 
         self.matching_tracks = []
+        self.confirmed_matching_track = None
+        self.confirmed_matching_track_index = None
+
+    def update_status(self):
+        if not self.matching_tracks:
+            self.display_color = 'red'
+        elif self.matching_tracks and not self.confirmed_matching_track:
+            self.display_color = 'gold3'
+        elif self.matching_tracks and self.confirmed_matching_track:
+            self.display_color = 'cyan2'
+
+
 
     def cache_track(self):
         try:
