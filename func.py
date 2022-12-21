@@ -20,8 +20,6 @@ class Song():
         elif self.matching_tracks and self.confirmed_matching_track:
             self.display_color = 'cyan2'
 
-
-
     def cache_track(self):
         try:
             with open('song_cache.pickle', 'rb+') as f:
