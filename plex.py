@@ -3,10 +3,14 @@ import sys
 import pickle
 from credentials import *
 from rich import print
+from difflib import SequenceMatcher
+
 
 account = None
 plex = None
 
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
 
 def parse_song(song):
     return {
@@ -40,77 +44,80 @@ def setup_plex(username, password, servername):
         pickle.dump(plex, f)
 
 
+def add_track(local, fetch, confirm=False):
+    fetch = parse_song(fetch)
+    # Add if it doesn't exist
+    if fetch not in local.matching_tracks:
+        local.matching_tracks.append(fetch)
+
+        if confirm:
+            local.confirmed_matching_track = fetch
+            local.matching_tracks.pop()
+            local.matching_tracks.insert(0,fetch)
+            local.confirmed_matching_track_index = 0
+
 def check_if_exist(song):
-    track = song.name
-    artist = song.artist
+    local_track_name = song.name.lower()
+    local_artist_name = song.artist.lower()
 
+    # Setup up plex API
     music = plex.library.section('Music') # type: ignore
-    
-    # Search for Tracks
-    # print(f"Query: {track}")
-    init_track_results = music.searchTracks(title=track)
-    flag = False
-    for i in init_track_results:
-        song.matching_tracks.append(parse_song(i))
 
+    pattern_matches = [
+        local_track_name,
+        local_track_name.split("-")[0],
+        local_track_name.split("(")[0][:-1],
+        local_track_name.split("[")[0][:-1],
+    ]
 
-        if artist.lower() in i.artist().title.lower() or i.artist().title.lower() in artist.lower():
-            # change the index to 1 of matching_tracks
-            song.matching_tracks.pop()
-            song.matching_tracks.insert(0,parse_song(i))
+    for pattern_index in range(len(pattern_matches)):
 
-            if i.title.lower() == track.lower():
-                song.confirmed_matching_track = parse_song(i)
-            flag = True
+        # Search for the track
+        track_results = music.searchTracks(title=pattern_matches[pattern_index])
 
-    if song.confirmed_matching_track:
-        song.confirmed_matching_track_index = song.matching_tracks.index(song.confirmed_matching_track)
+        for track in track_results:
+            result_track_name = track.title.lower()
+            result_artist_name = track.artist().title.lower()
 
-    
-    if flag:
-        return flag,len(song.matching_tracks)
-    
-    # Search for Tracks without remix or feat
-    split_track_results = music.searchTracks(title=track.split("-")[0])
-    flag = False
-    for i in split_track_results:
-        if i not in init_track_results:
-            song.matching_tracks.append(parse_song(i))
+            # IDEAL CASE: Track name and artist name match
+            if result_track_name == local_track_name and result_artist_name == local_artist_name:
+                add_track(song, track, confirm=True)
 
-        if artist.lower() in i.artist().title.lower() or i.artist().title.lower() in artist.lower():
-            # change the index to 1 of matching_tracks
-            song.matching_tracks.pop()
-            song.matching_tracks.insert(0,parse_song(i))
+                # Return true and length of matching tracks
+                return True, 1
 
-            if i.title.lower() == track.lower():
-                song.confirmed_matching_track = parse_song(i)
-            flag = True
+            # SECOND BEST CASE: Track name is a substring of each other and artist matches
+            elif local_track_name in result_track_name or result_track_name in local_track_name and result_artist_name == local_artist_name:
+                add_track(song, track, confirm=True)
 
-    if song.confirmed_matching_track:
-        song.confirmed_matching_track_index = song.matching_tracks.index(song.confirmed_matching_track)
+                return True, len(song.matching_tracks)
+                
+            
+            # THIRD BEST CASE: Artist name is a substring of each other and track matches
+            elif local_artist_name in result_artist_name or result_artist_name in local_artist_name and result_track_name == local_track_name:
+                add_track(song, track, confirm=True)
 
-    # Pattern match without brackets
-    if not flag:
-        pattern_track_results = music.searchTracks(title=track.split("[")[0][:-1])
-        for i in pattern_track_results:
-            if i not in init_track_results and i not in split_track_results:
-                song.matching_tracks.append(parse_song(i))
+            # Case 4: Track name is a substring and artist name is in the track name
+            elif local_track_name in result_track_name or result_track_name in local_track_name and local_artist_name in result_track_name:
+                add_track(song, track, confirm=True)
+            
+            # Case 4: Track name is a substring of each other and artist name is a substring of each other
+            elif local_track_name in result_track_name or result_track_name in local_track_name and local_artist_name in result_artist_name or result_artist_name in local_artist_name:
+                add_track(song, track)
+            
+            # Case 5: Track name is a substring but artist name is similar
+            elif local_track_name in result_track_name or result_track_name in local_track_name and similar(local_artist_name, result_artist_name) > 0.8:
+                add_track(song, track)
+            
+            # Case 6: Track name is a substring
+            elif local_track_name in result_track_name or result_track_name in local_track_name:
+                add_track(song, track)
 
-            if artist.lower() in i.artist().title.lower() or i.artist().title.lower() in artist.lower():
+        # If there are confirmed tracks then break
+        if len(song.matching_tracks) > 0:
+            break
 
-                if i.title.lower() == track.lower():
-                    song.confirmed_matching_track = parse_song(i)
+    # Return false and length of matching tracks
+    return False, len(song.matching_tracks)
 
-                # change the index to 1 of matching_tracks
-                song.matching_tracks.pop()
-                song.matching_tracks.insert(0,parse_song(i))
-                flag = True
-
-    if song.confirmed_matching_track:
-        song.confirmed_matching_track_index = song.matching_tracks.index(song.confirmed_matching_track)
-
-    if flag:
-        return flag,len(song.matching_tracks)
-
-    return False,len(song.matching_tracks)
     

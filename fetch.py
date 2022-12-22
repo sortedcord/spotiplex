@@ -9,6 +9,8 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=spotify_cli
 from deezer.client import Client
 from deemix.utils.deezer import getAccessToken
 
+from rich.live import Live
+
 from rich import print
 from difflib import SequenceMatcher
 
@@ -50,14 +52,22 @@ def show_download_progress(master):
 
     main_str = ""
 
+    main_str += f"[bold white]--------------------- [/bold white][bold chartreuse1] Downloading {len(master)} tracks [bold charteuse3] [bold white]---------------------[/bold white]\n"
+
     for track in master:
-        if track['status'] in ('Found','Inactive','Not Found'):
-            main_str += (f"\n[{ref[track['status']]}][{track['status']}]{track['name']} by {track['artist']}")
+        if track['status'] in ('Found','Not Found'):
+            main_str += (f"\n[{ref[track['status']]}][{track['status']}]{track['name']} by {track['artist']} [/{ref[track['status']]}]")
+            # break
         elif track['status'] == "Searching" or track['status'] == "Analyzing":
             main_str += (f"\n[{ref[track['status']]}][{track['status']}]{track['name']} by {track['artist']} ")
             for query_pattern in track['query_patterns']:
                 main_str += (f"Pattern {track['query_patterns'].index(query_pattern)}: [{ref[query_pattern['status']]}]{query_pattern['status']} ")
-    print(main_str,end="\r")
+
+                # if it is the last query pattern then add a new line
+                if track['query_patterns'].index(query_pattern) == len(track['query_patterns']) - 1:
+                    main_str += "\n"
+            break
+    return main_str
 
 
 
@@ -76,61 +86,61 @@ def search_deezer(tracks):
                         'status':'Inactive'
         })
 
+    with Live(show_download_progress(master), refresh_per_second=9) as live:
+        live.update(show_download_progress(master))
+        for track in tracks:
 
-    show_download_progress(master)
-    for track in tracks:
+            query_patterns = [
+                f"{track.name} {track.artist}",
+                f"{track.name}",
+                f"{track.name.split('[')[0]}",
+                f"{track.name.split('(')[0]}",
+            ]
 
-        query_patterns = [
-            f"{track.name} {track.artist}",
-            f"{track.name}",
-            f"{track.name.split('[')[0]}",
-            f"{track.name.split('(')[0]}",
-        ]
+            _ = False
 
-        _ = False
+            for query_pattern in query_patterns:
+                master[tracks.index(track)]['status'] = "Searching"
+                master[tracks.index(track)]['query_patterns'] = [{'status':'Inactive'},{'status':'Inactive'},{'status':'Inactive'},{'status':'Inactive'}]
+                master[tracks.index(track)]['query_patterns'][query_patterns.index(query_pattern)]['status'] = "Searching"
 
-        for query_pattern in query_patterns:
-            master[tracks.index(track)]['status'] = "Searching"
-            master[tracks.index(track)]['query_patterns'] = [{'status':'Inactive'},{'status':'Inactive'},{'status':'Inactive'},{'status':'Inactive'}]
-            master[tracks.index(track)]['query_patterns'][query_patterns.index(query_pattern)]['status'] = "Searching"
+                live.update(show_download_progress(master))
+                search_results = client.search(query_pattern)[:8]
 
-            show_download_progress(master)
-            search_results = client.search(query_pattern)[:8]
-
-            if len(search_results) == 0:
-                master[tracks.index(track)]['query_patterns'][query_patterns.index(query_pattern)]['status'] = "Not Found"
-                show_download_progress(master)
-                continue
-            
-            for result in search_results:
-                result_title = result.title.lower()
-                track_name = track.name.lower()
-                track_artist = track.artist.lower()
-                result_artist_name = result.artist.name.lower()
+                if len(search_results) == 0:
+                    master[tracks.index(track)]['query_patterns'][query_patterns.index(query_pattern)]['status'] = "Not Found"
+                    # live.update(show_download_progress(master))
+                    continue
                 
-                master[tracks.index(track)]['status'] = "Analyzing"
-                show_download_progress(master)
+                for result in search_results:
+                    result_title = result.title.lower()
+                    track_name = track.name.lower()
+                    track_artist = track.artist.lower()
+                    result_artist_name = result.artist.name.lower()
+                    
+                    master[tracks.index(track)]['status'] = "Analyzing"
+                    live.update(show_download_progress(master))
 
 
-                if result_title in track_name or track_name in result_title:
-                    if result_artist_name != track_artist:
-                        if similar(result_artist_name, track_artist) > 0.7:
-                            print(f"[bold yellow]Is {track_name} - {track.artist} the same as {result_title} - {result_artist_name}? (Y/N)")
-                            if input().lower() == "y":
-                                pass
+                    if result_title in track_name or track_name in result_title:
+                        if result_artist_name != track_artist:
+                            if similar(result_artist_name, track_artist) > 0.7:
+                                print(f"[bold yellow]Is {track_name} - {track.artist} the same as {result_title} - {result_artist_name}? (Y/N)")
+                                if input().lower() == "y":
+                                    pass
+                                else:
+                                    continue
                             else:
                                 continue
-                        else:
-                            continue
-                    track.matching_tracks.append(result)
-                    track.update_status()
-                    master[tracks.index(track)]['query_patterns'][query_patterns.index(query_pattern)]['status'] = "Found"
-                    master[tracks.index(track)]['status'] = "Found"
-                    show_download_progress(master)
-                    _ = True
+                        track.matching_tracks.append(result)
+                        track.update_status()
+                        master[tracks.index(track)]['query_patterns'][query_patterns.index(query_pattern)]['status'] = "Found"
+                        master[tracks.index(track)]['status'] = "Found"
+                        live.update(show_download_progress(master))
+                        _ = True
+                        break
+                if _:
                     break
-            if _:
-                break
-        if not _:
-            master[tracks.index(track)]['status'] = "Not Found"
-            show_download_progress(master)
+            if not _:
+                master[tracks.index(track)]['status'] = "Not Found"
+                live.update(show_download_progress(master))

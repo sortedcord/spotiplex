@@ -14,7 +14,8 @@ from rich.live import Live
 con = rich.get_console()
 
 setup_plex(plex_email,plex_password,plex_server)
-tracks = get_playlist_tracks("5Ux5UONLss471Zz4FAHESP")
+tracks = get_playlist_tracks("37i9dQZF1ELZGwXK5139kh")
+
 
 
 print("\n")
@@ -28,7 +29,7 @@ for track in tracks:
     stat, track_res = check_if_exist(track)
 
     track.update_status()
-    if stat and track.confirmed_matching_track is None:
+    if not stat and track.confirmed_matching_track is None:
         con.print(f"Song {track_name} exists",style="bold chartreuse3",end=" ")
         con.print(f"by {artist}",style="bold chartreuse3", end=" ")
         con.print(f" {track_res} Tracks.",style="yellow")
@@ -58,45 +59,17 @@ con.print("Review Matches? (Y/N)",style="bold yellow",end=" ")
 
 if input().lower() == "y":
 
-
+    print("\n\n")
     selection = 0
     selected_page = 0
     fetch_track = 0
 
     # build(tracks, selection, fetch_track)
-    
-    keymaps = {
-    "+": "Next Track",
-    "-": "Previous Track",
-    "p": "Previous Page",
-    "n": "Next Page",
-    "Enter": "Confirm Selection",
-    "q / ESC": "Finish Matching",
-    "Arrows": "Change Selection",
-    "a": "Add local track",
-    "r": "Reload UI",
-    "m": "Mark as missing",
-    "j": "Jump to track"
-    }
 
-
-    with Live(build(tracks, selection, fetch_track), refresh_per_second=4) as live:
+    with Live(build(tracks, selection, fetch_track), refresh_per_second=2) as live:
 
         confirmed = None
         while True:
-
-            keymap_str = ""
-            _ = 1
-            for key, value in keymaps.items():
-                if len(keymap_str.replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
-                    keymap_str += "\n"
-                    _ += 1
-                elif len(str(keymap_str+f"[bold green]{key}[/bold green]: {value}" + "   ").replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
-                    keymap_str += "\n"
-                    _ += 1
-                keymap_str += f"[bold green]{key}[/bold green]: {value}" + "   "
-
-            print(keymap_str+"\n")
 
             key = getkey()
 
@@ -129,6 +102,30 @@ if input().lower() == "y":
                 selected_page = 0
                 fetch_track -= 1
                 confirmed = None
+
+            elif key == '+':
+                selection = 0
+                selected_page = 0
+                confirmed = None
+
+                # Jump to next unconfirmed track
+                for i in range(fetch_track+1,len(tracks)):
+                    if tracks[i].confirmed_matching_track is None:
+                        fetch_track = i
+                        break
+
+
+            elif key == '_':
+                selection = 0
+                selected_page = 0
+                confirmed = None
+
+                # Jump to previous unconfirmed track
+                for i in range(fetch_track-1,-1,-1):
+                    if tracks[i].display_color == 'red':
+                        fetch_track = i
+                        break
+                
 
             # When enter key is presed
             elif key == keys.ENTER:

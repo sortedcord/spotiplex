@@ -3,7 +3,36 @@ from rich.layout import Layout
 from rich.panel import Panel
 import sys,os
 
+def get_keymap_str():
 
+    keymaps = {
+    "+": "Next Track",
+    "-": "Previous Track",
+    "p": "Previous Page",
+    "n": "Next Page",
+    "Enter": "Confirm Selection",
+    "q / ESC": "Finish Matching",
+    "Arrows": "Change Selection",
+    "a": "Add local track",
+    "r": "Reload UI",
+    "m": "Mark as missing",
+    "j": "Jump to track [Type the track index and press enter]",
+    "Shift +": "Jump to next unconfirmed track",
+    "Shift -": "Jump to previous unconfirmed track",
+    }
+
+    keymap_str = ""
+    _ = 1
+    for key, value in keymaps.items():
+        if len(keymap_str.replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
+            keymap_str += "\n"
+            _ += 1
+        elif len(str(keymap_str+f"[bold green]{key}[/bold green]: {value}" + "   ").replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
+            keymap_str += "\n"
+            _ += 1
+        keymap_str += f"[bold green]{key}[/bold green]: {value}" + "   "
+
+    return keymap_str
 
 def ms_to_min(ms):
         seconds = (ms / 1000) % 60
@@ -113,15 +142,18 @@ def build(tracks, selection, fetch_track, confirmed=None):
 
     main_layout = Layout()
 
+    main_layout.split_column(
+        Layout(name="top_main",ratio=10),
+        Layout(name="help_panel")
+    )
 
-
-    main_layout.split_row(
+    main_layout['top_main'].split_row(
         Layout(name="fetched",ratio=1),
         Layout(name="local",ratio=2)
     )
 
     #Split fetched layout
-    main_layout['fetched'].split_column(
+    main_layout['top_main']['fetched'].split_column(
         Layout(name="fetched_top"),
         Layout(name="fetched_bottom", ratio=3)
     )
@@ -148,7 +180,7 @@ def build(tracks, selection, fetch_track, confirmed=None):
 
     playlist_panel = Panel(playlist_str,title="Playlist")
 
-    main_layout['fetched']['fetched_bottom'].update(playlist_panel)
+    main_layout['top_main']['fetched']['fetched_bottom'].update(playlist_panel)
 
     fetched_layout_panel_content = f"""[bold blue]Track Name[/bold blue]: [bold white]{fetch_track_name}[/bold white]
 [bold blue]Artist Name[/bold blue]: [bold white]{fetch_track_artist}[/bold white]
@@ -157,11 +189,13 @@ def build(tracks, selection, fetch_track, confirmed=None):
     """
     fetched_layout_panel = Panel(fetched_layout_panel_content, title=f"[green bold]Fetched Track {fetch_track+1} of {len(tracks)}[/green bold]")
 
-    main_layout['fetched']['fetched_top'].update(fetched_layout_panel)
+    main_layout['top_main']['fetched']['fetched_top'].update(fetched_layout_panel)
 
     current_page = selection // 4
-    main_layout['local'].update(panel_pages[current_page])
+    main_layout['top_main']['local'].update(panel_pages[current_page])
 
+    help_panel = Panel(get_keymap_str(),title="[bold gold1]Keymap[/bold gold1]")
+    main_layout['help_panel'].update(help_panel)
 
     main_panel = Panel(main_layout, title="[bold red]Spotiplex Matching Utility",height=os.get_terminal_size().lines -6)
     # print(main_panel,end="\r")
