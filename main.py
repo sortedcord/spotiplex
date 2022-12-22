@@ -1,4 +1,4 @@
-from fetch import get_playlist_tracks
+from fetch import get_playlist_tracks, search_deezer
 from plex import check_if_exist, setup_plex
 import rich
 from getkey import getkey, keys
@@ -7,6 +7,9 @@ from matching import build
 import os
 from credentials import plex_email, plex_password, plex_server
 from rich import print
+from difflib import SequenceMatcher
+
+from rich.live import Live
 
 con = rich.get_console()
 
@@ -54,118 +57,124 @@ con.print("Successfully recognized " + str(len(recognized)) + " songs, out of " 
 con.print("Review Matches? (Y/N)",style="bold yellow",end=" ")
 
 if input().lower() == "y":
-        
+
+
     selection = 0
     selected_page = 0
     fetch_track = 0
 
-    build(tracks, selection, fetch_track)
-
-    confirmed = None
-    while True:
-        keymaps = {
-        "+": "Next Track",
-        "-": "Previous Track",
-        "p": "Previous Page",
-        "n": "Next Page",
-        "Enter": "Confirm Selection",
-        "q / ESC": "Finish Matching",
-        "Arrows": "Change Selection",
-        "a": "Add local track",
-        "r": "Reload UI",
-        "m": "Mark as missing",
-        "j": "Jump to track"
+    # build(tracks, selection, fetch_track)
+    
+    keymaps = {
+    "+": "Next Track",
+    "-": "Previous Track",
+    "p": "Previous Page",
+    "n": "Next Page",
+    "Enter": "Confirm Selection",
+    "q / ESC": "Finish Matching",
+    "Arrows": "Change Selection",
+    "a": "Add local track",
+    "r": "Reload UI",
+    "m": "Mark as missing",
+    "j": "Jump to track"
     }
 
-        keymap_str = ""
-        _ = 1
-        for key, value in keymaps.items():
-            if len(keymap_str.replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
-                keymap_str += "\n"
-                _ += 1
-            elif len(str(keymap_str+f"[bold green]{key}[/bold green]: {value}" + "   ").replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
-                keymap_str += "\n"
-                _ += 1
-            keymap_str += f"[bold green]{key}[/bold green]: {value}" + "   "
 
-        print(keymap_str+"\n")
+    with Live(build(tracks, selection, fetch_track), refresh_per_second=4) as live:
 
-        key = getkey()
+        confirmed = None
+        while True:
 
+            keymap_str = ""
+            _ = 1
+            for key, value in keymaps.items():
+                if len(keymap_str.replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
+                    keymap_str += "\n"
+                    _ += 1
+                elif len(str(keymap_str+f"[bold green]{key}[/bold green]: {value}" + "   ").replace("[bold green]","").replace("[/bold green]","")) > os.get_terminal_size().columns*_:
+                    keymap_str += "\n"
+                    _ += 1
+                keymap_str += f"[bold green]{key}[/bold green]: {value}" + "   "
 
-        if key == keys.LEFT:
-            selection -= 1
-        elif key == keys.RIGHT:
-            selection += 1
-        elif key == keys.UP:
-            selection -= 2
-        elif key == keys.DOWN:
-            selection += 2
-        elif key == 'p':
-            selection -= 4
-        elif key == 'n':
-            selection += 4
-        elif key == keys.ESC:
-            break
-        elif key == 'q':
-            break
-            
-        elif key == '=':
-            fetch_track += 1
-            selection = 0
-            selected_page = 0
-            confirmed = None
+            print(keymap_str+"\n")
 
-        elif key == '-':
-            selection = 0
-            selected_page = 0
-            fetch_track -= 1
-            confirmed = None
-
-        # When enter key is presed
-        elif key == keys.ENTER:
-            if tracks[fetch_track].display_color != 'red':
-                confirmed = selection
-                tracks[fetch_track].confirmed_matching_track_index = selection
-                tracks[fetch_track].confirmed_matching_track = tracks[fetch_track].matching_tracks[selection]
-
-        elif key=="r":
-            pass
-
-        elif key == 'm':
-            print(f"[bold red]Are you sure you want to mark {tracks[fetch_track].name} as missing?[/bold red][red]\n This would mean that there are no local tracks that match this song.[/red] [bold red]Y/N[/bold red] ",end=" ")
-            confirmation = input()
-            if confirmation.lower() == "y":
-                tracks[fetch_track].confirmed_matching_track = None
-                tracks[fetch_track].confirmed_matching_track_index = None
-                tracks[fetch_track].matching_tracks = []
-
-        elif key == 'j':
-            print(f"[bold green]Jump to track number (1-{len(tracks)}):[/bold green] ",end="")
-            jump_selection = input()
-            if jump_selection.isnumeric():
-                jump_selection = int(jump_selection)
-                if jump_selection > 0 and jump_selection <= len(tracks):
-                    fetch_track = jump_selection - 1
-                    selection = 0
-                    selected_page = 0
-                    confirmed = None
-                else:
-                    print(f"[bold red]Invalid track number.[/bold red]")
+            key = getkey()
 
 
-        if fetch_track < 0:
-            fetch_track = 0
-        if fetch_track >= len(tracks):
-            fetch_track = len(tracks) - 1
+            if key == keys.LEFT:
+                selection -= 1
+            elif key == keys.RIGHT:
+                selection += 1
+            elif key == keys.UP:
+                selection -= 2
+            elif key == keys.DOWN:
+                selection += 2
+            elif key == 'p':
+                selection -= 4
+            elif key == 'n':
+                selection += 4
+            elif key == keys.ESC:
+                break
+            elif key == 'q':
+                break
+                
+            elif key == '=':
+                fetch_track += 1
+                selection = 0
+                selected_page = 0
+                confirmed = None
 
-        if selection < 0:
-            selection = 0
-        if selection >= len(tracks[fetch_track].matching_tracks):
-            selection = len(tracks[fetch_track].matching_tracks) - 1
+            elif key == '-':
+                selection = 0
+                selected_page = 0
+                fetch_track -= 1
+                confirmed = None
 
-        tracks[fetch_track].update_status()
-        build(tracks, selection, fetch_track, confirmed)
+            # When enter key is presed
+            elif key == keys.ENTER:
+                if tracks[fetch_track].display_color != 'red':
+                    confirmed = selection
+                    tracks[fetch_track].confirmed_matching_track_index = selection
+                    tracks[fetch_track].confirmed_matching_track = tracks[fetch_track].matching_tracks[selection]
+
+            elif key=="r":
+                pass
+
+            elif key == 'm':
+                print(f"[bold red]Are you sure you want to mark {tracks[fetch_track].name} as missing?[/bold red][red]\n This would mean that there are no local tracks that match this song.[/red] [bold red]Y/N[/bold red] ",end=" ")
+                confirmation = input()
+                if confirmation.lower() == "y":
+                    tracks[fetch_track].confirmed_matching_track = None
+                    tracks[fetch_track].confirmed_matching_track_index = None
+                    tracks[fetch_track].matching_tracks = []
+
+            elif key == 'j':
+                print(f"[bold green]Jump to track number (1-{len(tracks)}):[/bold green] ",end="")
+                jump_selection = input()
+                if jump_selection.isnumeric():
+                    jump_selection = int(jump_selection)
+                    if jump_selection > 0 and jump_selection <= len(tracks):
+                        fetch_track = jump_selection - 1
+                        selection = 0
+                        selected_page = 0
+                        confirmed = None
+                    else:
+                        print(f"[bold red]Invalid track number.[/bold red]")
+
+
+            if fetch_track < 0:
+                fetch_track = 0
+            if fetch_track >= len(tracks):
+                fetch_track = len(tracks) - 1
+
+            if selection < 0:
+                selection = 0
+            if selection >= len(tracks[fetch_track].matching_tracks):
+                selection = len(tracks[fetch_track].matching_tracks) - 1
+
+            tracks[fetch_track].update_status()
+            live.update(build(tracks, selection, fetch_track, confirmed))
+            # build(tracks, selection, fetch_track, confirmed)
 
     download_list = []
 
@@ -182,6 +191,7 @@ if input().lower() == "y":
     download_confirmation = input()
 
     if download_confirmation.lower() == "y":
-        pass
+        print("[bold green]Downloading tracks...[/bold green]")
+        search_deezer(download_list)
 
     

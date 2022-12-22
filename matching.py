@@ -15,7 +15,6 @@ def ms_to_min(ms):
         return f"{minutes}:{seconds}"
 
 def build(tracks, selection, fetch_track, confirmed=None):
-    os.system('cls' if os.name == 'nt' else 'clear')
 
     if confirmed is None:
         confirmed = tracks[fetch_track].confirmed_matching_track_index
@@ -165,7 +164,8 @@ def build(tracks, selection, fetch_track, confirmed=None):
 
 
     main_panel = Panel(main_layout, title="[bold red]Spotiplex Matching Utility",height=os.get_terminal_size().lines -6)
-    print(main_panel)
+    # print(main_panel,end="\r")
+    return main_panel
 
     
 
