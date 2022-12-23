@@ -2,7 +2,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from func import Song
 import os
-from credentials import spotify_client_id, spotify_client_secret, deemix_username, deemix_password
+from credentials import *
 
 sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=spotify_client_id,
                                                            client_secret=spotify_client_secret))
@@ -48,6 +48,7 @@ def show_download_progress(master):
         "Found": "bold green",
         "Analyzing": "bold yellow",
         "Not Found": "bold red",
+        "Downloaded": "bold deep_pink2"
     }
 
     main_str = ""
@@ -70,7 +71,21 @@ def show_download_progress(master):
     return main_str
 
 
+def download_deezer(tracks, master):
+    from deemix.utils.deezer import getAccessToken, getArlFromAccessToken
 
+    from downloader import download
+
+    # get the access token
+    token = getAccessToken(deemix_username, deemix_password)
+    arl = getArlFromAccessToken(token)
+
+    with Live(show_download_progress(master), refresh_per_second=9) as live:
+        for track in tracks:
+            print("Downloading " + track.name + " by " + track.artist)
+            downloader = download((f"https://www.deezer.com/en/track/{track.deezer['id']}",), 320, True, path=download_location, arl=arl)
+            master[tracks.index(track)]['status'] = "Downloaded"
+        live.update(show_download_progress(master))
 
 def search_deezer(tracks):
     access_token = getAccessToken(deemix_username, deemix_password)
@@ -136,6 +151,7 @@ def search_deezer(tracks):
                         track.update_status()
                         master[tracks.index(track)]['query_patterns'][query_patterns.index(query_pattern)]['status'] = "Found"
                         master[tracks.index(track)]['status'] = "Found"
+                        tracks[tracks.index(track)].deezer['id'] = result.id
                         live.update(show_download_progress(master))
                         _ = True
                         break
@@ -144,3 +160,21 @@ def search_deezer(tracks):
             if not _:
                 master[tracks.index(track)]['status'] = "Not Found"
                 live.update(show_download_progress(master))
+
+    # Download the tracks that have been found
+    found_list = []
+    for track in tracks:
+        if track.deezer['id'] != None:
+            found_list.append(track)
+    
+    download_deezer(found_list, master)
+
+
+if __name__ == "__main__":
+    from deemix.utils.deezer import getAccessToken, getArlFromAccessToken
+    from downloader import download
+
+    token = getAccessToken(deemix_username, deemix_password)
+    arl = getArlFromAccessToken(token)
+
+    downloader = download((f"https://www.deezer.com/en/track/1733691157",), 320, True, None, arl=arl)

@@ -12,6 +12,10 @@ class Song():
         self.confirmed_matching_track = None
         self.confirmed_matching_track_index = None
 
+        self.deezer = {
+            'id': None,
+        }
+
     def update_status(self):
         if not self.matching_tracks:
             self.display_color = 'red'

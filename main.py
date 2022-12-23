@@ -14,7 +14,7 @@ from rich.live import Live
 con = rich.get_console()
 
 setup_plex(plex_email,plex_password,plex_server)
-tracks = get_playlist_tracks("37i9dQZF1ELZGwXK5139kh")
+tracks = get_playlist_tracks("5Ux5UONLss471Zz4FAHESP")
 
 
 
@@ -29,28 +29,24 @@ for track in tracks:
     stat, track_res = check_if_exist(track)
 
     track.update_status()
-    if not stat and track.confirmed_matching_track is None:
-        con.print(f"Song {track_name} exists",style="bold chartreuse3",end=" ")
-        con.print(f"by {artist}",style="bold chartreuse3", end=" ")
-        con.print(f" {track_res} Tracks.",style="yellow")
-        # track.display_color = "chartreuse3"
-    elif stat and track.confirmed_matching_track is not None:
-        con.print(f"Song {track_name} Confirmed",style="bold cyan2",end=" ")
-        con.print(f"by {artist}",style="bold cyan2")
+   
+    if stat or track.confirmed_matching_track_index is not None:
+        track.display_color = "cyan1"
+        print(f"[bold {track.display_color}] Track {track.name} - {track.artist} is found.[/bold {track.display_color}]", end="")
         recognized.append(track)
-        # track.display_color = "cyan2"
-    elif stat == False and track_res != 0:
-        con.print(f"Multiple songs like {track_name} exist",style="bold gold1", end=" ")
-        con.print(f" {track_res} Tracks.",style="yellow")
-        recognized.append(track)
-        # track.display_color = "gold1"
+        if track_res > 1:
+            print(f"[chartreuse1] Found {track_res} similar tracks.[/chartreuse1]")
+        else:
+            print()
     else:
-        con.print(f"Song {track_name} does not exist",style="bold red", end=" ")
-        con.print(f"by {artist}",style="bold red")
-        # track.display_color = "red"
+        if track_res > 0:
+            print(f"[bold gold1] Track {track.name} - {track.artist} is not found.[/bold gold1]", end="")
+            print(f"[bold gold1] Found {track_res} similar track(s).[/bold gold1]")
+            not_recognized.append(track)
+        else:
+            print(f"[bold red] Track {track.name} - {track.artist} is not found.[/bold red]")
+            not_recognized.append(track)
 
-
-        not_recognized.append(track)
 
 print("\n")
 con.print("Successfully recognized " + str(len(recognized)) + " songs, out of " + str(len(tracks)) + " songs",style="bold green")
