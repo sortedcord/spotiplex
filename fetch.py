@@ -6,7 +6,7 @@ from credentials import *
 
 sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=spotify_client_id,
                                                            client_secret=spotify_client_secret))
-from deezer.client import Client
+from deezer_python.client import Client
 from deemix.utils.deezer import getAccessToken
 
 from rich.live import Live
@@ -172,9 +172,9 @@ def search_deezer(tracks):
 
 if __name__ == "__main__":
     from deemix.utils.deezer import getAccessToken, getArlFromAccessToken
-    from downloader import download
+    from deemix.__main__ import download
 
     token = getAccessToken(deemix_username, deemix_password)
     arl = getArlFromAccessToken(token)
 
-    downloader = download((f"https://www.deezer.com/en/track/1733691157",), 320, True, None, arl=arl)
+    downloader = download((f"https://www.deezer.com/en/track/1733691157",), 320, None, None, arl)
